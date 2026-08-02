@@ -116,23 +116,8 @@ a {
   margin-bottom: 34px;
 }
 
-.kicker {
-  margin: 0 0 12px;
-  color: var(--focus);
-  font-size: 0.82rem;
-  font-weight: 760;
-}
-
-h1 {
-  max-width: 18ch;
-  margin: 0;
-  font-size: clamp(2rem, 5vw, 3.25rem);
-  line-height: 1.08;
-  font-weight: 760;
-}
-
 .intro > p:last-child {
-  margin: 16px 0 0;
+  margin: 0;
   color: var(--text-muted);
   line-height: 1.6;
 }
@@ -567,10 +552,6 @@ footer p {
 
   .intro {
     margin-bottom: 26px;
-  }
-
-  h1 {
-    font-size: 2.15rem;
   }
 
   .reader-form {
