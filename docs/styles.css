@@ -200,11 +200,35 @@ h1 {
   min-height: 38px;
   padding: 9px 8px;
   border-radius: 3px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
+  gap: 8px;
   overflow-wrap: anywhere;
   cursor: default;
   user-select: none;
+}
+
+.provider-badge {
+  padding: 2px 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--text-muted);
+  background: var(--surface);
+  font-size: 0.65rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.provider-badge.outlook {
+  color: #075e96;
+  border-color: #8dbdd9;
+  background: #eaf6fc;
+}
+
+.saved-email {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .saved-option + .saved-option {
@@ -274,6 +298,48 @@ h1 {
 
 .reader-form {
   padding: 28px;
+}
+
+.provider-switcher {
+  width: 100%;
+  margin: 0 0 24px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  background: var(--surface-muted);
+}
+
+.provider-switcher label {
+  min-width: 0;
+  min-height: 40px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 720;
+}
+
+.provider-switcher input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.provider-switcher label:has(input:checked) {
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(23 32 28 / 12%);
+}
+
+.provider-switcher label:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
 }
 
 .field + .field {
@@ -391,6 +457,11 @@ h1 {
   background: var(--accent-hover);
 }
 
+.primary-action:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .primary-action:active {
   transform: translateY(1px);
 }
@@ -409,6 +480,75 @@ h1 {
 
 .form-status {
   text-align: center;
+}
+
+.message-result {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.result-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.result-heading p,
+.result-heading time {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.result-heading p {
+  font-weight: 750;
+}
+
+.message-result h2 {
+  margin: 9px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.message-sender,
+.message-preview {
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.message-sender {
+  margin: 5px 0 0;
+}
+
+.message-preview {
+  margin: 14px 0 0;
+  white-space: pre-wrap;
+}
+
+.message-codes {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.message-codes:empty {
+  display: none;
+}
+
+.message-codes code {
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--surface-muted);
+  font-size: 1rem;
+  font-weight: 760;
+  letter-spacing: 0;
 }
 
 footer {
@@ -519,6 +659,16 @@ footer p {
 
   .secondary-action img {
     filter: invert(1);
+  }
+
+  .provider-badge.outlook {
+    color: #a8dcff;
+    border-color: #477a98;
+    background: #17354a;
+  }
+
+  .provider-switcher label:has(input:checked) {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
   }
 
   .field input::placeholder {

@@ -2,27 +2,48 @@ use std::error::Error;
 use std::io::Read;
 use std::time::Duration;
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use regex::Regex;
 use reqwest::blocking::Client;
 use reqwest::header::{CACHE_CONTROL, CONTENT_TYPE, USER_AGENT};
 use scraper::{node::Node, Html, Selector};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 const SERVICE_BASE_URL: &str = "https://mail.334401.xyz/";
+const MICROSOFT_TOKEN_URL: &str = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+const MICROSOFT_GRAPH_URL: &str = "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages";
 const MAX_RESPONSE_BYTES: usize = 2 * 1024 * 1024;
+
+#[derive(Clone, Debug, Default, ValueEnum)]
+enum Provider {
+    #[default]
+    Icloud,
+    Outlook,
+}
 
 #[derive(Debug, Parser)]
 #[command(version, about)]
 struct Args {
+    /// Mail provider to read.
+    #[arg(long, value_enum, default_value_t = Provider::Icloud)]
+    provider: Provider,
+
     /// Mailbox viewer access token.
     #[arg(long, env = "ICLOUD_MAIL_TOKEN", hide_env_values = true)]
-    token: String,
+    token: Option<String>,
 
     /// iCloud mailbox address associated with the token.
     #[arg(long, env = "ICLOUD_MAIL_EMAIL", hide_env_values = true)]
     email: String,
+
+    /// Outlook OAuth refresh token.
+    #[arg(long, env = "OUTLOOK_MAIL_REFRESH_TOKEN", hide_env_values = true)]
+    refresh_token: Option<String>,
+
+    /// Microsoft public-client application ID associated with the refresh token.
+    #[arg(long, env = "OUTLOOK_MAIL_CLIENT_ID", hide_env_values = true)]
+    client_id: Option<String>,
 
     /// Print only the first six-digit code.
     #[arg(long)]
@@ -38,6 +59,28 @@ struct MailSummary {
     title: String,
     codes: Vec<String>,
     html_bytes: usize,
+}
+
+#[derive(Debug, Deserialize)]
+struct MicrosoftTokenResponse {
+    access_token: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct MicrosoftErrorResponse {
+    error: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GraphMessagesResponse {
+    value: Vec<GraphMessage>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GraphMessage {
+    subject: Option<String>,
+    #[serde(rename = "bodyPreview")]
+    body_preview: Option<String>,
 }
 
 fn build_message_url(token: &str, email: &str) -> Result<Url, Box<dyn Error>> {
@@ -126,14 +169,24 @@ fn parse_message(html: &str) -> Result<MailSummary, Box<dyn Error>> {
         }
     }
 
+    let codes = extract_codes(&visible_text)?;
+
+    Ok(MailSummary {
+        title,
+        codes,
+        html_bytes: html.len(),
+    })
+}
+
+fn extract_codes(text: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let code_regex = Regex::new(r"[0-9]{6}")?;
     let mut codes = Vec::new();
-    for matched in code_regex.find_iter(&visible_text) {
-        let before_is_digit = visible_text[..matched.start()]
+    for matched in code_regex.find_iter(text) {
+        let before_is_digit = text[..matched.start()]
             .chars()
             .next_back()
             .is_some_and(|character| character.is_ascii_digit());
-        let after_is_digit = visible_text[matched.end()..]
+        let after_is_digit = text[matched.end()..]
             .chars()
             .next()
             .is_some_and(|character| character.is_ascii_digit());
@@ -146,19 +199,103 @@ fn parse_message(html: &str) -> Result<MailSummary, Box<dyn Error>> {
         }
     }
 
+    Ok(codes)
+}
+
+fn fetch_outlook_summary(
+    client: &Client,
+    refresh_token: &str,
+    client_id: &str,
+) -> Result<MailSummary, Box<dyn Error>> {
+    if refresh_token.trim().is_empty() {
+        return Err("Outlook refresh token must not be empty".into());
+    }
+    if client_id.trim().is_empty() {
+        return Err("Outlook client ID must not be empty".into());
+    }
+
+    let token_response = client
+        .post(MICROSOFT_TOKEN_URL)
+        .form(&[
+            ("client_id", client_id),
+            ("grant_type", "refresh_token"),
+            ("refresh_token", refresh_token),
+            ("scope", "https://graph.microsoft.com/.default"),
+        ])
+        .send()
+        .map_err(|_| "Microsoft token request failed")?;
+    if !token_response.status().is_success() {
+        let status = token_response.status();
+        let error_code = token_response
+            .json::<MicrosoftErrorResponse>()
+            .ok()
+            .and_then(|response| response.error)
+            .unwrap_or_else(|| "unknown_error".to_owned());
+        return Err(format!("Microsoft token request failed ({status}, {error_code})").into());
+    }
+    let access_token = token_response
+        .json::<MicrosoftTokenResponse>()
+        .map_err(|_| "Microsoft token response was invalid")?
+        .access_token;
+
+    let mut graph_url = Url::parse(MICROSOFT_GRAPH_URL)?;
+    graph_url
+        .query_pairs_mut()
+        .append_pair("$top", "1")
+        .append_pair("$orderby", "receivedDateTime desc")
+        .append_pair("$select", "subject,bodyPreview");
+    let graph_response = client
+        .get(graph_url)
+        .bearer_auth(access_token)
+        .header(CACHE_CONTROL, "no-cache")
+        .send()
+        .map_err(|_| "Microsoft Graph request failed")?
+        .error_for_status()
+        .map_err(|_| "Microsoft Graph rejected the mail request; verify Mail.Read permission")?
+        .json::<GraphMessagesResponse>()
+        .map_err(|_| "Microsoft Graph response was invalid")?;
+    summarize_graph_messages(graph_response)
+}
+
+fn summarize_graph_messages(
+    graph_response: GraphMessagesResponse,
+) -> Result<MailSummary, Box<dyn Error>> {
+    let message = graph_response
+        .value
+        .into_iter()
+        .next()
+        .ok_or("Outlook inbox is empty")?;
+    let title = message.subject.unwrap_or_default();
+    let preview = message.body_preview.unwrap_or_default();
+    let searchable = format!("{title} {preview}");
+
     Ok(MailSummary {
         title,
-        codes,
-        html_bytes: html.len(),
+        codes: extract_codes(&searchable)?,
+        html_bytes: preview.len(),
     })
 }
 
 fn run(args: Args) -> Result<(), Box<dyn Error>> {
-    let url = build_message_url(&args.token, &args.email)?;
     let client = Client::builder()
         .timeout(Duration::from_secs(args.timeout))
         .build()?;
-    let summary = parse_message(&fetch_message(&client, url)?)?;
+    let summary = match args.provider {
+        Provider::Icloud => {
+            let token = args.token.as_deref().ok_or("iCloud token is required")?;
+            let url = build_message_url(token, &args.email)?;
+            parse_message(&fetch_message(&client, url)?)?
+        }
+        Provider::Outlook => fetch_outlook_summary(
+            &client,
+            args.refresh_token
+                .as_deref()
+                .ok_or("Outlook refresh token is required")?,
+            args.client_id
+                .as_deref()
+                .ok_or("Outlook client ID is required")?,
+        )?,
+    };
 
     if args.latest_code {
         let code = summary.codes.first().ok_or("no six-digit code found")?;
@@ -218,5 +355,31 @@ mod tests {
         assert_eq!(summary.title, "Your & login code");
         assert_eq!(summary.codes, vec!["932763"]);
         assert_eq!(summary.html_bytes, html.len());
+    }
+
+    #[test]
+    fn extracts_codes_with_digit_boundaries() {
+        let codes = extract_codes("code 123456, duplicate 123456, not 91234567").unwrap();
+
+        assert_eq!(codes, vec!["123456"]);
+    }
+
+    #[test]
+    fn summarizes_latest_graph_message() {
+        let graph_response: GraphMessagesResponse = serde_json::from_str(
+            r#"{
+                "value": [{
+                    "subject": "Your sign-in code is 481209",
+                    "bodyPreview": "Use 481209 to finish signing in."
+                }]
+            }"#,
+        )
+        .unwrap();
+
+        let summary = summarize_graph_messages(graph_response).unwrap();
+
+        assert_eq!(summary.title, "Your sign-in code is 481209");
+        assert_eq!(summary.codes, vec!["481209"]);
+        assert_eq!(summary.html_bytes, 32);
     }
 }
