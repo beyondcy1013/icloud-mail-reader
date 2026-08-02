@@ -42,8 +42,10 @@ cargo test --all-targets
 
 The `docs/` directory contains a dependency-free GitHub Pages app. It builds
 the mailbox viewer URL entirely in the browser and opens the latest message in
-a new tab. The page never stores the token; remembering the email address is
-optional.
+a new tab. By default, the page stores email and token pairs in browser local
+storage so saved accounts can be switched quickly. Individual entries or the
+entire local history can be removed from the account list. Use this option only
+on a trusted device.
 
 Live site: <https://beyondcy1013.github.io/icloud-mail-reader/>
 

@@ -43,68 +43,99 @@
           <p>邮箱和 Token 仅在当前浏览器中处理。</p>
         </div>
 
-        <form id="reader-form" class="reader-form" autocomplete="off" novalidate>
-          <div class="field">
-            <label for="mailbox-address">iCloud 邮箱</label>
-            <input
-              id="mailbox-address"
-              name="mailbox-address"
-              type="email"
-              inputmode="email"
-              autocomplete="off"
-              autocapitalize="none"
-              autocorrect="off"
-              spellcheck="false"
-              placeholder="name+alias@icloud.com"
-              aria-describedby="email-error"
-              required
-            />
-            <p id="email-error" class="field-error" aria-live="polite"></p>
-          </div>
+        <div class="account-layout">
+          <aside class="saved-panel" aria-labelledby="saved-title">
+            <div class="saved-heading">
+              <h2 id="saved-title">已保存账户</h2>
+              <span id="saved-count" aria-live="polite">0</span>
+            </div>
+            <div
+              id="saved-accounts"
+              role="listbox"
+              tabindex="0"
+              aria-label="选择已保存账户"
+              aria-describedby="saved-hint"
+            ></div>
+            <p id="saved-hint" class="sr-only">双击、按 Enter 或使用切换按钮载入账户。</p>
+            <div class="saved-actions">
+              <button id="switch-account" class="secondary-action" type="button" disabled>
+                <img src="assets/switch.svg" alt="" width="17" height="17" />
+                <span>切换</span>
+              </button>
+              <button id="delete-account" class="secondary-action danger-action" type="button" disabled>
+                <img src="assets/trash.svg" alt="" width="17" height="17" />
+                <span>删除</span>
+              </button>
+              <button id="clear-accounts" class="secondary-action danger-action clear-action" type="button" disabled>
+                <img src="assets/trash.svg" alt="" width="17" height="17" />
+                <span>清空全部</span>
+              </button>
+            </div>
+          </aside>
 
-          <div class="field">
-            <label for="viewer-access">访问 Token</label>
-            <input
-              id="viewer-access"
-              name="viewer-access"
-              type="password"
-              autocomplete="new-password"
-              autocapitalize="none"
-              autocorrect="off"
-              spellcheck="false"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-form-type="other"
-              placeholder="输入访问 Token"
-              aria-describedby="token-error token-note"
-              required
-            />
-            <p id="token-error" class="field-error" aria-live="polite"></p>
-            <p id="token-note" class="field-note">提交后自动清空，不会保存到此页面。</p>
-          </div>
+          <form id="reader-form" class="reader-form" autocomplete="off" novalidate>
+            <div class="field">
+              <label for="mailbox-address">iCloud 邮箱</label>
+              <input
+                id="mailbox-address"
+                name="mailbox-address"
+                type="email"
+                inputmode="email"
+                autocomplete="off"
+                autocapitalize="none"
+                autocorrect="off"
+                spellcheck="false"
+                placeholder="name+alias@icloud.com"
+                aria-describedby="email-error"
+                required
+              />
+              <p id="email-error" class="field-error" aria-live="polite"></p>
+            </div>
 
-          <div class="preferences">
-            <label class="check-row" for="show-access">
-              <input id="show-access" type="checkbox" />
-              <span>显示 Token</span>
-            </label>
-            <label class="check-row" for="remember-mailbox">
-              <input id="remember-mailbox" type="checkbox" />
-              <span>在此设备记住邮箱</span>
-            </label>
-          </div>
+            <div class="field">
+              <label for="viewer-access">访问 Token</label>
+              <input
+                id="viewer-access"
+                name="viewer-access"
+                type="password"
+                autocomplete="new-password"
+                autocapitalize="none"
+                autocorrect="off"
+                spellcheck="false"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-form-type="other"
+                placeholder="输入访问 Token"
+                aria-describedby="token-error token-note"
+                required
+              />
+              <p id="token-error" class="field-error" aria-live="polite"></p>
+              <p id="token-note" class="field-note">保存后会写入当前浏览器，仅限可信设备使用。</p>
+            </div>
 
-          <button class="primary-action" type="submit">
-            <span>打开最新邮件</span>
-            <img src="assets/external-link.svg" alt="" width="19" height="19" />
-          </button>
+            <div class="preferences">
+              <label class="check-row" for="show-access">
+                <input id="show-access" type="checkbox" />
+                <span>显示 Token</span>
+              </label>
+              <label class="check-row" for="remember-mailbox">
+                <input id="remember-mailbox" type="checkbox" checked />
+                <span>保存邮箱和 Token</span>
+              </label>
+            </div>
 
-          <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
-        </form>
+            <button class="primary-action" type="submit">
+              <span>打开最新邮件</span>
+              <img src="assets/external-link.svg" alt="" width="19" height="19" />
+            </button>
+
+            <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
       </section>
 
       <footer>
-        <p>页面不会代理或保存邮件内容。完整查看地址等同于访问凭据，请勿分享。</p>
+        <p>页面不会代理或保存邮件内容。已保存账户保留在当前浏览器，完整查看地址等同于访问凭据，请勿分享。</p>
       </footer>
     </main>
   </body>
