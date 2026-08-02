@@ -51,6 +51,19 @@ function detectProvider(mailbox) {
   return APPLE_MAILBOX_PATTERN.test(mailbox) ? "icloud" : "outlook";
 }
 
+function parseCombinedMailbox(value) {
+  const separatorIndex = value.indexOf("----");
+  if (separatorIndex < 1) {
+    return null;
+  }
+  const mailbox = value.slice(0, separatorIndex).trim();
+  const access = value.slice(separatorIndex + 4).trim();
+  if (!detectProvider(mailbox) || !access) {
+    return null;
+  }
+  return { mailbox, access };
+}
+
 function profileKey(profile) {
   return `${profile.provider}:${profile.email.toLowerCase()}`;
 }
@@ -442,6 +455,17 @@ showAccess.addEventListener("change", () => {
 });
 mailboxInput.addEventListener("input", () => {
   setFieldError(mailboxInput, emailError, "");
+  const combined = parseCombinedMailbox(mailboxInput.value);
+  if (combined) {
+    mailboxInput.value = combined.mailbox;
+    updateProviderFromMailbox(true);
+    accessInput.value = combined.access;
+    accessInput.type = "password";
+    showAccess.checked = false;
+    setFieldError(accessInput, tokenError, "");
+    formStatus.textContent = "已自动拆分邮箱和 Token。";
+    return;
+  }
   updateProviderFromMailbox(true);
 });
 accessInput.addEventListener("input", () => setFieldError(accessInput, tokenError, ""));

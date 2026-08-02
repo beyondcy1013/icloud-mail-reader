@@ -65,6 +65,10 @@ stores account credentials in browser local storage so saved accounts can be
 switched quickly. Individual entries or the entire local history can be
 removed from the account list. Use this option only on a trusted device.
 
+The email field also accepts `email----token`. After pasting, the page keeps
+the address in the email field and moves everything after the first `----`
+into the credential field.
+
 The Outlook implementation was checked against the MIT-licensed
 [`cubezhao/ai-tools-mng`](https://github.com/cubezhao/ai-tools-mng) Graph flow at
 commit `643bb2bd4efd69a1f573d980ebcf87bc9aa53e0b`. This project uses a smaller,
