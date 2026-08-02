@@ -57,10 +57,10 @@ cargo test --all-targets
 
 ## Web app
 
-The `docs/` directory contains a dependency-free GitHub Pages app. iCloud mode
-builds the fixed mailbox viewer URL in the browser and opens it in a new tab.
-Outlook mode communicates only with Microsoft's official OAuth and Graph
-endpoints and renders the latest message preview as text. By default, the page
+The `docs/` directory contains a dependency-free GitHub Pages app. It detects
+the provider from the email address: Apple mail domains use the fixed iCloud
+viewer, while other valid addresses use Microsoft's official OAuth and Graph
+endpoints and render the latest message preview as text. By default, the page
 stores account credentials in browser local storage so saved accounts can be
 switched quickly. Individual entries or the entire local history can be
 removed from the account list. Use this option only on a trusted device.

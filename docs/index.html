@@ -40,7 +40,7 @@
         <div class="intro">
           <p class="kicker">邮件直达</p>
           <h1 id="page-title">读取最新邮件</h1>
-          <p>支持 iCloud 和 Outlook，凭据仅在当前浏览器中处理。</p>
+          <p>自动识别 iCloud 和 Outlook，凭据仅在当前浏览器中处理。</p>
         </div>
 
         <div class="account-layout">
@@ -74,20 +74,8 @@
           </aside>
 
           <form id="reader-form" class="reader-form" autocomplete="off" novalidate>
-            <fieldset class="provider-switcher">
-              <legend class="sr-only">邮箱提供商</legend>
-              <label>
-                <input type="radio" name="provider" value="icloud" checked />
-                <span>iCloud</span>
-              </label>
-              <label>
-                <input type="radio" name="provider" value="outlook" />
-                <span>Outlook</span>
-              </label>
-            </fieldset>
-
             <div class="field">
-              <label id="mailbox-label" for="mailbox-address">iCloud 邮箱</label>
+              <label id="mailbox-label" for="mailbox-address">邮箱地址</label>
               <input
                 id="mailbox-address"
                 name="mailbox-address"
@@ -97,7 +85,7 @@
                 autocapitalize="none"
                 autocorrect="off"
                 spellcheck="false"
-                placeholder="name+alias@icloud.com"
+                placeholder="name@icloud.com 或 name@outlook.com"
                 aria-describedby="email-error"
                 required
               />
@@ -105,7 +93,7 @@
             </div>
 
             <div class="field">
-              <label id="access-label" for="viewer-access">访问 Token</label>
+              <label id="access-label" for="viewer-access">邮箱凭据</label>
               <input
                 id="viewer-access"
                 name="viewer-access"
@@ -117,7 +105,7 @@
                 data-lpignore="true"
                 data-1p-ignore="true"
                 data-form-type="other"
-                placeholder="输入访问 Token"
+                placeholder="输入 Token"
                 aria-describedby="token-error token-note"
                 required
               />

@@ -8,13 +8,12 @@ const LEGACY_PROFILE_STORAGE_KEY = "icloud-mail-reader:profiles:v1";
 const LEGACY_MAILBOX_KEY = "icloud-mail-reader:mailbox";
 const MAX_PROFILES = 50;
 const ICLOUD_TOKEN_PATTERN = /^[A-Za-z0-9_-]{20,256}$/;
-const ICLOUD_MAILBOX_PATTERN = /^[^\s@]+@icloud\.com$/i;
+const APPLE_MAILBOX_PATTERN = /^[^\s@]+@(icloud\.com|me\.com|mac\.com)$/i;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REFRESH_TOKEN_PATTERN = /^\S{40,4096}$/;
 const CLIENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const form = document.querySelector("#reader-form");
-const providerInputs = [...document.querySelectorAll('input[name="provider"]')];
 const mailboxLabel = document.querySelector("#mailbox-label");
 const mailboxInput = document.querySelector("#mailbox-address");
 const accessLabel = document.querySelector("#access-label");
@@ -43,9 +42,13 @@ const messageCodes = document.querySelector("#message-codes");
 const messagePreview = document.querySelector("#message-preview");
 
 let profiles = readProfiles();
+let lastDetectedProvider = null;
 
-function currentProvider() {
-  return providerInputs.find((input) => input.checked)?.value || "icloud";
+function detectProvider(mailbox) {
+  if (!EMAIL_PATTERN.test(mailbox)) {
+    return null;
+  }
+  return APPLE_MAILBOX_PATTERN.test(mailbox) ? "icloud" : "outlook";
 }
 
 function profileKey(profile) {
@@ -63,7 +66,7 @@ function isValidProfile(profile) {
     return false;
   }
   if (profile.provider === "icloud") {
-    return ICLOUD_MAILBOX_PATTERN.test(profile.email) && ICLOUD_TOKEN_PATTERN.test(profile.access);
+    return APPLE_MAILBOX_PATTERN.test(profile.email) && ICLOUD_TOKEN_PATTERN.test(profile.access);
   }
   return (
     EMAIL_PATTERN.test(profile.email) &&
@@ -170,10 +173,20 @@ function updateSavedActions() {
   clearAccounts.disabled = profiles.length === 0;
 }
 
-function setProvider(provider, clearValues = false) {
-  for (const input of providerInputs) {
-    input.checked = input.value === provider;
+function renderProvider(provider) {
+  if (!provider) {
+    mailboxLabel.textContent = "邮箱地址";
+    mailboxInput.placeholder = "name@icloud.com 或 name@outlook.com";
+    accessLabel.textContent = "邮箱凭据";
+    accessInput.placeholder = "输入 Token";
+    tokenNote.textContent = "输入邮箱后会自动识别类型；保存后仅写入当前浏览器。";
+    clientIdField.hidden = true;
+    clientIdInput.required = false;
+    submitLabel.textContent = "读取最新邮件";
+    messageResult.hidden = true;
+    return;
   }
+
   const isOutlook = provider === "outlook";
   mailboxLabel.textContent = isOutlook ? "Outlook 邮箱" : "iCloud 邮箱";
   mailboxInput.placeholder = isOutlook ? "name@outlook.com" : "name+alias@icloud.com";
@@ -186,12 +199,24 @@ function setProvider(provider, clearValues = false) {
   clientIdInput.required = isOutlook;
   submitLabel.textContent = isOutlook ? "读取最新邮件" : "打开最新邮件";
   messageResult.hidden = true;
-  clearErrors();
-  if (clearValues) {
-    mailboxInput.value = "";
+}
+
+function updateProviderFromMailbox(clearCredentialsOnChange = false) {
+  const provider = detectProvider(mailboxInput.value.trim());
+  if (
+    clearCredentialsOnChange &&
+    provider &&
+    lastDetectedProvider &&
+    provider !== lastDetectedProvider
+  ) {
     accessInput.value = "";
     clientIdInput.value = "";
   }
+  if (provider) {
+    lastDetectedProvider = provider;
+  }
+  renderProvider(provider);
+  return provider;
 }
 
 function loadSelectedProfile() {
@@ -199,8 +224,9 @@ function loadSelectedProfile() {
   if (!profile) {
     return;
   }
-  setProvider(profile.provider, true);
   mailboxInput.value = profile.email;
+  lastDetectedProvider = profile.provider;
+  renderProvider(profile.provider);
   accessInput.value = profile.access;
   clientIdInput.value = profile.clientId || "";
   accessInput.type = "password";
@@ -239,6 +265,8 @@ function removeSelectedProfile() {
     mailboxInput.value = "";
     accessInput.value = "";
     clientIdInput.value = "";
+    lastDetectedProvider = null;
+    renderProvider(null);
   }
   renderProfiles();
   formStatus.textContent = "已删除所选账户。";
@@ -258,6 +286,8 @@ function clearAllProfiles() {
   mailboxInput.value = "";
   accessInput.value = "";
   clientIdInput.value = "";
+  lastDetectedProvider = null;
+  renderProvider(null);
   renderProfiles();
   formStatus.textContent = "已清空全部保存记录。";
   mailboxInput.focus();
@@ -278,10 +308,8 @@ function validateInputs(provider, mailbox, access, clientId) {
   const errors = { mailbox: "", access: "", clientId: "" };
   if (!mailbox) {
     errors.mailbox = "请输入邮箱地址。";
-  } else if (provider === "icloud" && !ICLOUD_MAILBOX_PATTERN.test(mailbox)) {
-    errors.mailbox = "请输入以 @icloud.com 结尾的有效邮箱地址。";
-  } else if (provider === "outlook" && !EMAIL_PATTERN.test(mailbox)) {
-    errors.mailbox = "请输入有效的 Outlook 邮箱地址。";
+  } else if (!provider) {
+    errors.mailbox = "请输入有效的邮箱地址。";
   }
   if (!access) {
     errors.access = provider === "outlook" ? "请输入 Refresh Token。" : "请输入访问 Token。";
@@ -395,7 +423,7 @@ async function readOutlook(mailbox, refreshToken, clientId) {
 function migrateLegacyMailbox() {
   try {
     const legacyMailbox = window.localStorage.getItem(LEGACY_MAILBOX_KEY) || "";
-    if (profiles.length === 0 && ICLOUD_MAILBOX_PATTERN.test(legacyMailbox)) {
+    if (profiles.length === 0 && APPLE_MAILBOX_PATTERN.test(legacyMailbox)) {
       mailboxInput.value = legacyMailbox;
     }
     if (profiles.length > 0 && !window.localStorage.getItem(PROFILE_STORAGE_KEY)) {
@@ -408,15 +436,14 @@ function migrateLegacyMailbox() {
 
 renderProfiles();
 migrateLegacyMailbox();
-setProvider("icloud");
-
-for (const input of providerInputs) {
-  input.addEventListener("change", () => setProvider(input.value, true));
-}
+updateProviderFromMailbox();
 showAccess.addEventListener("change", () => {
   accessInput.type = showAccess.checked ? "text" : "password";
 });
-mailboxInput.addEventListener("input", () => setFieldError(mailboxInput, emailError, ""));
+mailboxInput.addEventListener("input", () => {
+  setFieldError(mailboxInput, emailError, "");
+  updateProviderFromMailbox(true);
+});
 accessInput.addEventListener("input", () => setFieldError(accessInput, tokenError, ""));
 clientIdInput.addEventListener("input", () => setFieldError(clientIdInput, clientIdError, ""));
 
@@ -477,8 +504,8 @@ form.addEventListener("submit", async (event) => {
   formStatus.textContent = "";
   messageResult.hidden = true;
 
-  const provider = currentProvider();
   const mailbox = mailboxInput.value.trim();
+  const provider = detectProvider(mailbox);
   const access = accessInput.value.trim();
   const clientId = clientIdInput.value.trim();
   const errors = validateInputs(provider, mailbox, access, clientId);

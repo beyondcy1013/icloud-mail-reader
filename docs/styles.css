@@ -300,48 +300,6 @@ h1 {
   padding: 28px;
 }
 
-.provider-switcher {
-  width: 100%;
-  margin: 0 0 24px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  background: var(--surface-muted);
-}
-
-.provider-switcher label {
-  min-width: 0;
-  min-height: 40px;
-  position: relative;
-  display: grid;
-  place-items: center;
-  border-radius: 3px;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  font-weight: 720;
-}
-
-.provider-switcher input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.provider-switcher label:has(input:checked) {
-  color: var(--text);
-  background: var(--surface);
-  box-shadow: 0 1px 2px rgb(23 32 28 / 12%);
-}
-
-.provider-switcher label:has(input:focus-visible) {
-  outline: 3px solid var(--focus);
-  outline-offset: 1px;
-}
-
 .field + .field {
   margin-top: 22px;
 }
@@ -665,10 +623,6 @@ footer p {
     color: #a8dcff;
     border-color: #477a98;
     background: #17354a;
-  }
-
-  .provider-switcher label:has(input:checked) {
-    box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
   }
 
   .field input::placeholder {
