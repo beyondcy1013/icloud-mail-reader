@@ -38,3 +38,14 @@ the values in shell history and process listings.
 cargo test --all-targets
 ```
 
+## Web app
+
+The `docs/` directory contains a dependency-free GitHub Pages app. It builds
+the mailbox viewer URL entirely in the browser and opens the latest message in
+a new tab. The page never stores the token; remembering the email address is
+optional.
+
+Live site: <https://beyondcy1013.github.io/icloud-mail-reader/>
+
+The interface uses icons from [Lucide](https://lucide.dev/) under the ISC
+license.

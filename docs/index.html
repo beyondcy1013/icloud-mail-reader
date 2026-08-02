@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta
+      name="description"
+      content="在浏览器本地构造邮箱查看地址，快速打开最新的 iCloud 邮件。"
+    />
+    <title>iCloud Mail Reader</title>
+    <link rel="icon" href="assets/mail.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="masthead">
+        <a class="brand" href="./" aria-label="iCloud Mail Reader 首页">
+          <span class="brand-mark" aria-hidden="true">
+            <img src="assets/mail.svg" alt="" width="24" height="24" />
+          </span>
+          <span>iCloud Mail Reader</span>
+        </a>
+        <a
+          class="source-link"
+          href="https://github.com/beyondcy1013/icloud-mail-reader"
+          rel="noreferrer"
+        >
+          查看源码
+        </a>
+      </header>
+
+      <section class="workspace" aria-labelledby="page-title">
+        <div class="intro">
+          <p class="kicker">邮件直达</p>
+          <h1 id="page-title">打开最新的 iCloud 邮件</h1>
+          <p>邮箱和 Token 仅在当前浏览器中处理。</p>
+        </div>
+
+        <form id="reader-form" class="reader-form" autocomplete="off" novalidate>
+          <div class="field">
+            <label for="mailbox-address">iCloud 邮箱</label>
+            <input
+              id="mailbox-address"
+              name="mailbox-address"
+              type="email"
+              inputmode="email"
+              autocomplete="off"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              placeholder="name+alias@icloud.com"
+              aria-describedby="email-error"
+              required
+            />
+            <p id="email-error" class="field-error" aria-live="polite"></p>
+          </div>
+
+          <div class="field">
+            <label for="viewer-access">访问 Token</label>
+            <input
+              id="viewer-access"
+              name="viewer-access"
+              type="password"
+              autocomplete="new-password"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
+              placeholder="输入访问 Token"
+              aria-describedby="token-error token-note"
+              required
+            />
+            <p id="token-error" class="field-error" aria-live="polite"></p>
+            <p id="token-note" class="field-note">提交后自动清空，不会保存到此页面。</p>
+          </div>
+
+          <div class="preferences">
+            <label class="check-row" for="show-access">
+              <input id="show-access" type="checkbox" />
+              <span>显示 Token</span>
+            </label>
+            <label class="check-row" for="remember-mailbox">
+              <input id="remember-mailbox" type="checkbox" />
+              <span>在此设备记住邮箱</span>
+            </label>
+          </div>
+
+          <button class="primary-action" type="submit">
+            <span>打开最新邮件</span>
+            <img src="assets/external-link.svg" alt="" width="19" height="19" />
+          </button>
+
+          <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <footer>
+        <p>页面不会代理或保存邮件内容。完整查看地址等同于访问凭据，请勿分享。</p>
+      </footer>
+    </main>
+  </body>
+</html>
